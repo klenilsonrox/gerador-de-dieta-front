@@ -117,7 +117,7 @@ const Home = () => {
             onClick={closeModal}
           >
             <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-              <button className='fixed top-2 right-4 bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded-md'>fechar</button>
+              <button className='fixed top-2 right-4 bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded-md' onClick={handleCloseModal}>fechar</button>
               <h2 className="text-2xl font-bold text-gray-200 mb-4">Seu Plano Alimentar:</h2>
 
               {/* Renderiza o Markdown convertido em HTML e aplica as separações */}
