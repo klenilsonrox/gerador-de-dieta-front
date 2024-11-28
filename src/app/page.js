@@ -1,101 +1,126 @@
-import Image from "next/image";
+'use client'
+// pages/index.js
+import DietForm from '@/components/DietForm';
+import { useState } from 'react';
+import { marked } from 'marked'; // Importa o 'marked' para processar Markdown
 
-export default function Home() {
+const Home = () => {
+  const [dietPlan, setDietPlan] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar a visibilidade do modal
+  const [isLoading, setIsLoading] = useState(false); // Estado para controlar o carregamento
+
+  const handleGenerateDiet = async (formData) => {
+    setIsLoading(true); // Começa o carregamento
+    try {
+      const response = await fetch('https://gerador-de-dieta.vercel.app/generate-diet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar o plano alimentar');
+      }
+
+      const data = await response.json(); // Chama response.json() apenas uma vez
+
+      console.log(data); // Aqui você pode ver o conteúdo retornado pela API
+
+      // Atualiza o estado com o conteúdo da resposta e abre o modal
+      setDietPlan(data.dietPlan);
+      setIsModalOpen(true); // Abre o modal
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false); // Fim do carregamento
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false); // Fecha o modal
+    setDietPlan(null); // Limpa o plano alimentar
+  };
+
+  function closeModal({ target }) {
+    if (target.id === 'modal') {
+      setIsModalOpen(false);
+    }
+  }
+
+  // Função para estilizar o Markdown e separar cada dia com um destaque
+  const formatDietPlan = (markdownText) => {
+    // Divide o texto por "Dia X" para separar os dias
+    const days = markdownText.split(/(Dia \d+)/);
+    const formattedDays = days.map((part, index) => {
+      if (part.startsWith("Dia")) {
+        return `<h3 class="text-xl font-bold text-blue-500 mt-6 mb-3">${part}</h3>`;
+      }
+      // Para cada refeição dentro de um dia, aplicamos mais espaçamento
+      return part
+        .replace(/(\*\*.*?\*\*)/g, `<p class="font-semibold">${"$1"}</p>`) // Negrito para o nome da refeição
+        .replace(/(\*\*.*?\*\*:)/g, `<p class="mt-2">${"$1"}</p>`) // Negrito + descrição
+        .replace(/\*\*(.*?)\*\*/g, `<span class="font-normal">${"$1"}</span>`) // Não negrito para o conteúdo da refeição
+        .split("\n")
+        .map((line, idx) => {
+          if (line.trim()) {
+            return `<p class="mb-4">${line.trim()}</p>`;
+          }
+          return "";
+        })
+        .join('');
+    });
+
+    return formattedDays.join('');
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-gray-800 flex flex-col justify-center items-center py-12">
+      <div className="w-full max-w-3xl bg-gray-900 p-8 rounded-lg shadow-lg">
+        <DietForm onGenerateDiet={handleGenerateDiet} />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        {/* Feedback de carregamento */}
+        {isLoading && (
+          <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex justify-center items-center z-40">
+            <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+              <div className="text-white text-xl font-bold">Gerando seu plano alimentar...</div>
+              <div className="mt-4 animate-spin w-16 h-16 border-4 border-t-4 border-blue-500 border-r-transparent mx-auto rounded-full"></div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal */}
+        {isModalOpen && (
+          <div
+            className="fixed inset-0 bg-gray-700 bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50"
+            id="modal"
+            onClick={closeModal}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+              <button className='fixed top-2 right-4 bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded-md'>fechar</button>
+              <h2 className="text-2xl font-bold text-gray-200 mb-4">Seu Plano Alimentar:</h2>
+
+              {/* Renderiza o Markdown convertido em HTML e aplica as separações */}
+              <div
+                className="text-gray-300 space-y-4"
+                dangerouslySetInnerHTML={{
+                  __html: formatDietPlan(dietPlan), // Converte Markdown para HTML com as separações dos dias
+                }}
+              ></div>
+
+              <button
+                onClick={handleCloseModal}
+                className="mt-4 bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded-md"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default Home;
