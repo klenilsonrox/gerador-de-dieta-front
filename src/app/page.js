@@ -75,6 +75,25 @@ const Home = () => {
     return formattedDays.join('');
   };
 
+  // Função para formatar o conteúdo para ser copiado
+  const prepareTextForCopy = (dietText) => {
+    // Remove tags HTML, mas mantém as quebras de linha
+    const plainText = dietText.replace(/(<([^>]+)>)/ig, '').replace(/\n/g, '\n'); 
+    return plainText;
+  };
+
+  // Função para copiar o conteúdo para a área de transferência
+  const handleCopy = () => {
+    const textToCopy = prepareTextForCopy(dietPlan); // Prepara o texto para cópia
+    navigator.clipboard.writeText(textToCopy) // Copia o texto
+      .then(() => {
+        alert('Plano alimentar copiado com sucesso!');
+      })
+      .catch((err) => {
+        console.error('Erro ao copiar o texto: ', err);
+      });
+  };
+
   return (
     <div className="min-h-screen bg-gray-800 flex flex-col justify-center items-center py-12">
       <div className="w-full max-w-3xl bg-gray-900 p-8 rounded-lg shadow-lg">
@@ -108,6 +127,16 @@ const Home = () => {
                   __html: formatDietPlan(dietPlan), // Converte Markdown para HTML com as separações dos dias
                 }}
               ></div>
+
+              {/* Botão para copiar o conteúdo */}
+              <div className="mt-4">
+                <button
+                  onClick={handleCopy}
+                  className="inline-block bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded-md"
+                >
+                  Copiar Plano Alimentar
+                </button>
+              </div>
 
               <button
                 onClick={handleCloseModal}
